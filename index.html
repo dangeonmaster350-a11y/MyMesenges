@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Telegram Clone Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* App Container */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            background: #1a1a1a;
+            position: relative;
+        }
+
+        /* Sidebar (Desktop) */
+        .sidebar {
+            width: 320px;
+            background: #111111;
+            border-right: 1px solid #2b2b2b;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        /* Mobile menu */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            background: #2e9cff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: none;
+            color: white;
+            font-size: 24px;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a1a;
+            position: relative;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            width: 320px;
+            background: #111111;
+            border-left: 1px solid #2b2b2b;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100%;
+            z-index: 20;
+        }
+
+        .info-panel.active {
+            transform: translateX(0);
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 85%;
+                max-width: 300px;
+                transform: translateX(-100%);
+                z-index: 1000;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .chat-header {
+                padding-left: 60px !important;
+            }
+
+            .info-panel {
+                width: 100%;
+            }
+        }
+
+        /* Sidebar Header */
+        .sidebar-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0d0d0d;
+            border-bottom: 1px solid #2b2b2b;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .avatar.large {
+            width: 80px;
+            height: 80px;
+        }
+
+        .username {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Search */
+        .search-bar {
+            padding: 12px 16px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #2b2b2b;
+            position: relative;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8e8e8e;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            background: #1f1f1f;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        /* Tabs for chats/groups/channels */
+        .tabs {
+            display: flex;
+            padding: 10px 16px;
+            gap: 20px;
+            border-bottom: 1px solid #2b2b2b;
+            background: #0d0d0d;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            color: #8e8e8e;
+            font-weight: 500;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .tab.active {
+            color: #2e9cff;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #2e9cff;
+        }
+
+        /* Chats List */
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #1f1f1f;
+        }
+
+        .chat-item:hover, .chat-item.active {
+            background: #1f1f1f;
+        }
+
+        .chat-info {
+            flex: 1;
+        }
+
+        .chat-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .last-message {
+            font-size: 13px;
+            color: #8e8e8e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .badge {
+            background: #2e9cff;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 11px;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            padding: 12px 20px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #2b2b2b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-actions i {
+            font-size: 20px;
+            margin-left: 18px;
+            cursor: pointer;
+            color: #8e8e8e;
+        }
+
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #121212;
+        }
+
+        .message {
+            max-width: 70%;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.outgoing {
+            align-self: flex-end;
+        }
+
+        .message.incoming {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 10px 14px;
+            border-radius: 18px;
+            position: relative;
+        }
+
+        .message.outgoing .message-bubble {
+            background: #2e9cff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.incoming .message-bubble {
+            background: #2b2b2b;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .message-audio {
+            width: 200px;
+            height: 36px;
+        }
+
+        .message-file {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .message-reactions {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .reaction {
+            font-size: 12px;
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .message-time {
+            font-size: 10px;
+            margin-top: 4px;
+            opacity: 0.7;
+            text-align: right;
+        }
+
+        /* Input Area */
+        .message-input-container {
+            padding: 12px 16px;
+            background: #0d0d0d;
+            border-top: 1px solid #2b2b2b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-attachments {
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-attachments i {
+            font-size: 22px;
+            color: #8e8e8e;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .input-attachments i:hover {
+            color: #2e9cff;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 10px 16px;
+            background: #1f1f1f;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+        }
+
+        #sendBtn {
+            background: #2e9cff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        /* Call Modal */
+        .call-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .call-modal.active {
+            display: flex;
+        }
+
+        .call-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+
+        .call-actions {
+            display: flex;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .call-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .call-end {
+            background: #ff3b30;
+            color: white;
+        }
+
+        /* Voice recording */
+        .voice-recording {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2e9cff;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 1500;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2e9cff;
+            border-radius: 3px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <img src="https://randomuser.me/api/portraits/men/1.jpg" class="avatar" id="myAvatar">
+                    <span class="username" id="myUsername">Мой аккаунт</span>
+                </div>
+                <div class="header-actions">
+                    <i class="fas fa-search" id="searchIcon"></i>
+                    <i class="fas fa-plus" id="newChatBtn"></i>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="chats"><i class="fas fa-comment"></i> Чаты</div>
+                <div class="tab" data-tab="groups"><i class="fas fa-users"></i> Группы</div>
+                <div class="tab" data-tab="channels"><i class="fas fa-broadcast-tower"></i> Каналы</div>
+            </div>
+
+            <div class="search-bar" id="searchBar" style="display: none;">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Поиск" id="globalSearch">
+            </div>
+
+            <div class="chats-list" id="chatsList"></div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-user">
+                    <img src="" class="avatar" id="chatAvatar">
+                    <div>
+                        <h3 id="chatName">Выберите чат</h3>
+                        <span class="status" id="chatStatus"></span>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <i class="fas fa-phone" id="callBtn"></i>
+                    <i class="fas fa-video" id="videoCallBtn"></i>
+                    <i class="fas fa-info-circle" id="infoBtn"></i>
+                </div>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                <div class="welcome-message" style="text-align: center; margin: auto;">
+                    <i class="fas fa-telegram-plane" style="font-size: 60px; color: #2e9cff;"></i>
+                    <h3>Telegram Clone Pro</h3>
+                    <p>Выберите диалог чтобы начать</p>
+                </div>
+            </div>
+
+            <div class="message-input-container">
+                <div class="input-attachments">
+                    <i class="fas fa-paperclip" id="attachFileBtn"></i>
+                    <i class="fas fa-image" id="attachImageBtn"></i>
+                    <i class="fas fa-microphone" id="voiceBtn"></i>
+                    <i class="fas fa-smile" id="emojiBtn"></i>
+                </div>
+                <input type="text" id="messageInput" placeholder="Сообщение" disabled>
+                <button id="sendBtn" disabled><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel" id="infoPanel">
+            <div class="sidebar-header">
+                <i class="fas fa-times" id="closeInfo" style="font-size: 24px; cursor: pointer;"></i>
+                <h3>Информация</h3>
+                <div style="width: 24px;"></div>
+            </div>
+            <div style="text-align: center; padding: 30px;">
+                <img src="" id="infoAvatar" class="avatar large">
+                <h3 id="infoName" style="margin-top: 15px;"></h3>
+                <p id="infoStatus" style="color: #8e8e8e; margin-top: 5px;"></p>
+                <p id="infoBio" style="margin-top: 20px;"></p>
+                <div style="margin-top: 30px;">
+                    <button id="clearHistoryBtn" style="background: #1f1f1f; border: none; color: #ff4d4d; padding: 12px; width: 100%; border-radius: 8px; margin-bottom: 10px;">
+                        <i class="fas fa-trash"></i> Очистить историю
+                    </button>
+                    <button id="blockUserBtn" style="background: #1f1f1f; border: none; color: #ff4d4d; padding: 12px; width: 100%; border-radius: 8px;">
+                        <i class="fas fa-ban"></i> Заблокировать
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call Modal -->
+        <div class="call-modal" id="callModal">
+            <img src="" class="call-avatar" id="callAvatar">
+            <h2 id="callName"></h2>
+            <p id="callStatus">Звонок...</p>
+            <div class="call-actions">
+                <button class="call-btn call-end" id="endCallBtn"><i class="fas fa-phone-slash"></i></button>
+            </div>
+        </div>
+
+        <!-- Voice Recording UI -->
+        <div class="voice-recording" id="voiceRecording">
+            <i class="fas fa-microphone" style="color: #ff3b30;"></i>
+            <span>Запись... 0:00</span>
+            <i class="fas fa-times" id="stopRecording" style="cursor: pointer;"></i>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" style="display: none;" accept="*/*">
+    <input type="file" id="imageInput" style="display: none;" accept="image/*">
+
+    <script>
+        // ========== DATA ==========
+        let currentUser = {
+            id: 'user_' + Math.random().toString(36).substr(2, 8),
+            name: 'Алексей',
+            avatar: 'https://randomuser.me/api/portraits/men/1.jpg'
+        };
+
+        let chats = [
+            { id: '1', type: 'chat', name: 'Анна Смирнова', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', lastMessage: 'Привет! Как дела?', time: '12:30', online: true, bio: 'Дизайнер, люблю рисование 🎨', unread: 0 },
+            { id: '2', type: 'chat', name: 'Дмитрий Петров', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', lastMessage: 'Завтра встреча в 15:00', time: '11:45', online: false, bio: 'Team Lead', unread: 2 },
+            { id: '3', type: 'group', name: 'Разработчики', avatar: 'https://randomuser.me/api/portraits/men/4.jpg', lastMessage: 'Кто на созвоне?', time: '10:20', members: 12, unread: 5 },
+            { id: '4', type: 'channel', name: 'Новости IT', avatar: 'https://randomuser.me/api/portraits/men/5.jpg', lastMessage: 'Вышел React 19', time: '09:15', subscribers: 1234, unread: 0 },
+            { id: '5', type: 'chat', name: 'Елена Морозова', avatar: 'https://randomuser.me/api/portraits/women/3.jpg', lastMessage: 'Спасибо за помощь!', time: 'вчера', online: true, bio: 'Маркетолог', unread: 0 }
+        ];
+
+        let messages = {
+            '1': [
+                { id: 'm1', text: 'Привет!', sender: '1', time: '12:30', outgoing: false, reactions: [] },
+                { id: 'm2', text: 'Здравствуй! Как настроение?', sender: currentUser.id, time: '12:31', outgoing: true, reactions: [] },
+                { id: 'm3', text: 'Отлично! Спасибо', sender: '1', time: '12:32', outgoing: false, reactions: [] }
+            ],
+            '2': [
+                { id: 'm4', text: 'Давайте перенесем встречу', sender: '2', time: '11:45', outgoing: false, reactions: [] },
+                { id: 'm5', text: 'Хорошо, на какое время?', sender: currentUser.id, time: '11:46', outgoing: true, reactions: [] }
+            ],
+            '3': [
+                { id: 'm6', text: 'Коллеги, напоминаю про дейли в 12:00', sender: 'admin', time: '10:20', outgoing: false, reactions: ['👍', '👌'] }
+            ],
+            '4': [
+                { id: 'm7', text: '📢 Новый релиз: Telegram добавил Stories', sender: 'channel', time: '09:15', outgoing: false, reactions: ['🔥'] }
+            ],
+            '5': [
+                { id: 'm8', text: 'Спасибо огромное за консуль
